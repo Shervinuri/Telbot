@@ -1,11 +1,10 @@
-
 const fetch = require("node-fetch");
 
 const POLLINATIONS_API = "https://text.pollinations.ai";
 
 exports.handler = async (event) => {
   try {
-    const { text } = JSON.parse(event.body);
+    const { text } = JSON.parse(event.body || "{}");
 
     const res = await fetch(POLLINATIONS_API, {
       method: "POST",
