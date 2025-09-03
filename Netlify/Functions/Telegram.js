@@ -6,7 +6,7 @@ const POLLINATIONS_API = "https://text.pollinations.ai";
 
 // لیست کانال‌ها/گروه‌های اجباری برای عضویت
 const REQUIRED_CHANNELS = [
-  "@YourChannelHere", // اینجا کانال‌هات رو بذار
+  "@aishervin", // اینجا کانال‌هات رو بذار
   "@YourGroupHere"
 ];
 
