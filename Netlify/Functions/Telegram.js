@@ -4,63 +4,50 @@ const TELEGRAM_TOKEN = "7980330500:AAEm3i0-ItT-n6n3GKVw1fqxojtsIwryuAY";
 const BOT_USERNAME = "@Minishenbot";
 const POLLINATIONS_API = "https://text.pollinations.ai";
 
-// لیست کانال‌ها/گروه‌های اجباری برای عضویت
+// کانال‌ها / گروه‌های اجباری
 const REQUIRED_CHANNELS = [
-  "@aishervin", // اینجا کانال‌هات رو بذار
+  "@YourChannelHere",
   "@YourGroupHere"
 ];
 
 exports.handler = async (event) => {
   try {
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || "{}");
 
-    if (body.message) {
-      const chatId = body.message.chat.id;
-      const text = body.message.text || "";
-      const userId = body.message.from.id;
+    if (!body.message) return { statusCode: 200, body: "No message" };
 
-      // چک جوین اجباری
-      const joined = await checkUserMembership(userId);
-      if (!joined) {
-        await sendMessage(
-          chatId,
-          "⚠️ برای استفاده از ربات باید ابتدا عضو کانال‌های زیر بشی:\n\n" +
-            REQUIRED_CHANNELS.map((c) => c).join("\n") +
-            "\n\nبعد از عضویت دوباره /start رو بزن."
-        );
-        return { statusCode: 200, body: "Join required" };
-      }
+    const chatId = body.message.chat.id;
+    const text = body.message.text || "";
+    const userId = body.message.from.id;
 
-      // دستور start
-      if (text === "/start") {
-        await sendMessage(chatId, "👋 خوش اومدی!\nربات به حالت چت‌بات متنی تنظیم شد. هرچی بفرستی، جواب می‌گیرری.\n\nدستورات:\n/image → ساخت تصویر 🎨\n/custom → فرمان سفارشی 🔧");
-      }
+    // چک جوین اجباری
+    const joined = await checkUserMembership(userId);
+    if (!joined) {
+      await sendMessage(chatId, "⚠️ باید عضو کانال‌ها باشی:\n" + REQUIRED_CHANNELS.join("\n"));
+      return { statusCode: 200, body: "Join required" };
+    }
 
-      // چت‌بات متنی (حالت دیفالت)
-      if (!text.startsWith("/")) {
-        const pollRes = await fetch(POLLINATIONS_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        });
-        const pollData = await pollRes.text();
-        await sendMessage(chatId, pollData);
-      }
-
-      // دستور ساخت تصویر
-      if (text.startsWith("/image")) {
-        await sendMessage(chatId, "🎨 لطفا استایل/مدل/مود رو انتخاب کنید...");
-        // بعداً می‌تونی inline keyboard اضافه کنی
-      }
-
-      // دستورات رزرو
-      if (text.startsWith("/custom")) {
-        await sendMessage(chatId, "🔧 این دستور بعداً تعریف میشه...");
-      }
+    // دستورات
+    if (text === "/start") {
+      await sendMessage(chatId, "👋 خوش آمدی! حالت پیش‌فرض چت‌بات متنی است.\nدستورات:\n/image → ساخت تصویر\n/custom → دستور رزرو");
+    } else if (text.startsWith("/image")) {
+      await sendMessage(chatId, "🎨 لطفا استایل و مدل را انتخاب کنید...");
+    } else if (text.startsWith("/custom")) {
+      await sendMessage(chatId, "🔧 این دستور بعداً تعریف می‌شود...");
+    } else if (text) {
+      // حالت پیش‌فرض → Pollinations
+      const pollRes = await fetch(POLLINATIONS_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const pollData = await pollRes.text();
+      await sendMessage(chatId, pollData);
     }
 
     return { statusCode: 200, body: "OK" };
   } catch (err) {
+    console.error(err);
     return { statusCode: 500, body: err.toString() };
   }
 };
@@ -75,14 +62,12 @@ async function sendMessage(chatId, text) {
 
 async function checkUserMembership(userId) {
   for (const channel of REQUIRED_CHANNELS) {
-    const res = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getChatMember?chat_id=${channel}&user_id=${userId}`
-    );
-    const data = await res.json();
-    if (!data.ok) return false;
-
-    const status = data.result.status;
-    if (status !== "member" && status !== "administrator" && status !== "creator") {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getChatMember?chat_id=${channel}&user_id=${userId}`);
+      const data = await res.json();
+      const status = data.result?.status;
+      if (status !== "member" && status !== "administrator" && status !== "creator") return false;
+    } catch (e) {
       return false;
     }
   }
