@@ -1,4 +1,3 @@
-
 exports.handler = async (event) => {
   try {
     if (event.httpMethod === "GET") {
@@ -13,8 +12,7 @@ exports.handler = async (event) => {
     }
 
     if (event.httpMethod === "POST") {
-      const body = JSON.parse(event.body);
-      // اینجا می‌تونی ذخیره تنظیمات بزنی
+      const body = JSON.parse(event.body || "{}");
       return { statusCode: 200, body: JSON.stringify({ success: true, saved: body }) };
     }
 
