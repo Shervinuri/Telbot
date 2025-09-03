@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>کنترل پنل ربات</title>
+  <style>
+    body { font-family: sans-serif; background: #222; color: #eee; padding: 20px; }
+    .card { background: #333; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input, button { padding: 10px; margin: 5px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>⚙️ کنترل پنل ربات Minishenbot</h1>
+
+  <div class="card">
+    <h2>مدیریت کانال‌های اجباری</h2>
+    <input id="channelInput" placeholder="@channelName">
+    <button onclick="addChannel()">➕ افزودن</button>
+    <ul id="channelList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>مدیریت دکمه‌ها</h2>
+    <button onclick="addButton()">➕ دکمه جدید</button>
+    <ul id="buttonList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>آمار کاربران</h2>
+    <button onclick="loadStats()">📊 نمایش آمار</button>
+    <pre id="stats"></pre>
+  </div>
+
+  <script>
+    function addChannel() {
+      const val = document.getElementById('channelInput').value;
+      if(val) {
+        const li = document.createElement('li');
+        li.textContent = val;
+        document.getElementById('channelList').appendChild(li);
+      }
+    }
+    function addButton() {
+      const li = document.createElement('li');
+      li.textContent = "🔘 دکمه جدید (قابل تنظیم)";
+      document.getElementById('buttonList').appendChild(li);
+    }
+    function loadStats() {
+      document.getElementById('stats').textContent = "👥 کاربران: 0\n📅 پیام‌ها: 0\n(فعلاً نمونه)";
+    }
+  </script>
+</body>
+</html>
