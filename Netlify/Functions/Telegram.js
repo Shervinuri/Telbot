@@ -1,7 +1,7 @@
 const fetch = require("node-fetch");
 
-const TELEGRAM_TOKEN = "7980330500:AAEm3i0-ItT-n6n3GKVw1fqxojtsIwryuAY";
-const BOT_USERNAME = "@Minishenbot";
+const TELEGRAM_TOKEN = "8301079306:AAF3ZVfNcyAXNjxNi7_r1XGjSbwYzYZ3x9I";
+const BOT_USERNAME = "@Shensrobot";
 const POLLINATIONS_API = "https://text.pollinations.ai";
 
 // کانال‌ها / گروه‌های اجباری
