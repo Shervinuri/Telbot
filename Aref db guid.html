@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>راهنمای پیاده‌سازی دیتاتیبل سرور-ساید | ویژه عارف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap');
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f3f4f6; }
+        .step-card { transition: all 0.3s ease; }
+        .step-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        code { direction: ltr; text-align: left; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white p-6 shadow-lg">
+        <div class="container mx-auto max-w-4xl">
+            <h1 class="text-3xl font-bold mb-2">🚀 پروژه مدیریت ۵۰۰,۰۰۰ رکورد پیمانکاری</h1>
+            <p class="opacity-90">راهنمای قدم‌به‌قدم پیاده‌سازی Server-side Processing با PHP برای عارف عزیز</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-4xl mt-8 px-4">
+
+        <!-- Intro Box -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6 border-r-4 border-yellow-500">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">💡 استراتژی کلی</h3>
+            <p class="text-gray-600 leading-7">
+                عارف جان، برای اینکه مرورگر زیر بار ۵۰۰ هزار رکورد هنگ نکنه، ما از تکنیک <strong>"پردازش سمت سرور"</strong> استفاده می‌کنیم. یعنی دیتابیس (MySQL) فقط ۱۰ تا رکوردی که کاربر نیاز داره رو به PHP میده و PHP اون رو به مرورگر میفرسته. اینطوری سرعت سایت همیشه زیر ۱ ثانیه میمونه.
+            </p>
+        </div>
+
+        <!-- Step 1: Database -->
+        <div class="step-card bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm ml-3">مرحله ۱</span>
+                <h2 class="text-2xl font-bold text-gray-800">آماده‌سازی دیتابیس</h2>
+            </div>
+            <p class="text-gray-600 mb-4">فایل اکسل رو CSV کن و توی دیتابیس (phpMyAdmin) ایمپورت کن. حتماً یک ستون `id` به عنوان Primary Key بساز.</p>
+            
+            <div class="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
+                <p class="text-red-700 font-bold text-sm">⚠️ نکته حیاتی (ایندکس گذاری):</p>
+                <p class="text-red-600 text-sm mt-1">اگر روی ستون‌هایی که جستجو میشن (مثل نام پیمانکار) ایندکس نذاری، سرعت جستجو خیلی پایین میاد.</p>
+            </div>
+
+            <pre><code class="language-sql">-- مثال: بعد از ساخت جدول، این دستور رو برای سرعت بالا اجرا کن
+ALTER TABLE `transactions` ADD INDEX `idx_contractor` (`contractor_name`);
+ALTER TABLE `transactions` ADD INDEX `idx_date` (`transaction_date`);</code></pre>
+        </div>
+
+        <!-- Step 2: SSP Class -->
+        <div class="step-card bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm ml-3">مرحله ۲</span>
+                <h2 class="text-2xl font-bold text-gray-800">کتابخانه جادویی PHP</h2>
+            </div>
+            <p class="text-gray-600 mb-4">
+                فایل `ssp.class.php` قلب تپنده این پروژه‌ست. این کلاس تمام کارهای سخت SQL رو برات انجام میده.
+            </p>
+            <a href="https://github.com/DataTables/DataTablesSrc/blob/master/examples/server_side/scripts/ssp.class.php" target="_blank" class="inline-flex items-center bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
+                📥 دانلود فایل ssp.class.php
+            </a>
+            <p class="text-sm text-gray-500 mt-2">این فایل رو دانلود کن و کنار فایل‌های پروژت بذار.</p>
+        </div>
+
+        <!-- Step 3: Server Logic -->
+        <div class="step-card bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm ml-3">مرحله ۳</span>
+                <h2 class="text-2xl font-bold text-gray-800">ساخت فایل رابط (Backend)</h2>
+            </div>
+            <p class="text-gray-600 mb-4">یک فایل به نام <code>server_processing.php</code> بساز و کد زیر رو توش قرار بده. اطلاعات دیتابیس رو ویرایش کن.</p>
+            
+            <pre><code class="language-php"><?php
+// تنظیمات اتصال به دیتابیس
+$sql_details = array(
+    'user' => 'root',
+    'pass' => '',
+    'db'   => 'my_project_db',
+    'host' => 'localhost'
+);
+
+$table = 'transactions'; // اسم جدول
+$primaryKey = 'id'; // کلید اصلی
+
+// تعریف ستون‌ها و فرمت‌دهی
+$columns = array(
+    array( 'db' => 'contractor_name', 'dt' => 0 ),
+    array( 'db' => 'description',  'dt' => 1 ),
+    array(
+        'db'        => 'amount',
+        'dt'        => 2,
+        'formatter' => function( $d, $row ) {
+            return number_format($d) . ' تومان'; // سه رقم جدا کردن
+        }
+    ),
+    array(
+        'db'        => 'created_at',
+        'dt'        => 3,
+        'formatter' => function( $d, $row ) {
+            return $d; // اینجا می‌تونی تابع تبدیل تاریخ شمسی بذاری
+        }
+    )
+);
+
+require( 'ssp.class.php' );
+
+echo json_encode(
+    SSP::simple( $_GET, $sql_details, $table, $primaryKey, $columns )
+);
+?></code></pre>
+        </div>
+
+        <!-- Step 4: Frontend -->
+        <div class="step-card bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm ml-3">مرحله ۴</span>
+                <h2 class="text-2xl font-bold text-gray-800">ظاهر سایت (Frontend)</h2>
+            </div>
+            <p class="text-gray-600 mb-4">این کد رو توی فایل <code>index.html</code> یا <code>index.php</code> بذار. دیتاتیبلز خودش همه چیز رو میسازه.</p>
+            
+            <pre><code class="language-html"><!DOCTYPE html>
+<html>
+<head>
+    <title>پنل مدیریت قراردادها</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <style>body { direction: rtl; font-family: tahoma; }</style>
+</head>
+<body>
+    
+    <table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>نام پیمانکار</th>
+                <th>شرح</th>
+                <th>مبلغ</th>
+                <th>تاریخ</th>
+            </tr>
+        </thead>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+        $('#example').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": "server_processing.php", // اتصال به فایل PHP مرحله قبل
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/fa.json"
+            }
+        });
+    });
+    </script>
+</body>
+</html></code></pre>
+        </div>
+
+    </main>
+
+    <footer class="text-center text-gray-500 py-6 text-sm">
+        تهیه شده برای عارف | پروژه سیستم مدیریت پیمانکاری
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <!-- Add this dependency for PHP support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup-templating.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+</body>
+</html></code>eof
+من تغییراتی ایجاد کردم. [کد HTML را با اضافه کردن اسکریپت `prism-markup-templating.min.js` که پیش‌نیاز نمایش کدهای PHP در Prism است، به‌روزرسانی کردم تا خطای کنسول برطرف شود.]
